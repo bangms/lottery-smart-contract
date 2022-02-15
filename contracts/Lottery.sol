@@ -3,7 +3,7 @@ pragma solidity >=0.4.22 <0.9.0;
 contract Lottery {
     struct BetInfo {
         uint256 answerBlockNumber; // 맞추려고 하는 정답 block
-        address payable better; // 0.4.24? 이후 부터는 특정 주소에 돈을 보내려면 payable이라는 수식어를 붙여줘야 함 아니면 transfer 불가능
+        address payable bettor; // 0.4.24? 이후 부터는 특정 주소에 돈을 보내려면 payable이라는 수식어를 붙여줘야 함 아니면 transfer 불가능
         byte challenges;
 
     }
@@ -23,13 +23,11 @@ contract Lottery {
     uint256 constant internal BET_AMOUNT = 5 * 10 ** 15; // 배팅 금액 0.005이더로 고정
     // 18승 = 1이더 / 17 = 0.1 / 16 = 0.01 / 15 = 0.001
     uint256 private _pot;
+
+    event BET(uint256 index, address bettor, uint256 amount, byte challenges, uint256 answerBlockNumber);
     
     constructor() public {
         owner = msg.sender;
-    }
-
-    function getSomeValue() public pure returns (uint256 value) {
-        return 5;
     }
 
     function getPot() public view returns (uint256 pot) {
@@ -37,6 +35,24 @@ contract Lottery {
     }
 
     // Bet (베팅)
+    /**
+     * @dev 베팅을 한다. 유저는 0.005 ETH를 보내야 하고, 베팅용 1 byte 글자를 보낸다.
+     * 큐에 저장된 베팅 정보는 이후 distribute 함수에서 해결된다.
+     * @param challenges 유저가 베팅하는 글자
+     * @return 함수가 잘 수행되었는지 확인하는 bool 값
+     */
+    function bet(byte challenges) public payable returns (bool result) {
+        // check the proper ether is sent
+        require(msg.value == BET_AMOUNT, "Not enough ETH!");
+
+        // push bet to the queue
+        require(pushBet(challenges), "Fail to add a new Bet Info.");
+
+        // emit event
+        emit BET(_tail - 1, msg.sender, msg.value, challenges, block.number + BET_BLOCK_INTERVAL);
+
+        return true;
+    }
         // save the bet to the queue (값을 저장)
     
     // Distribute (검증)
@@ -46,14 +62,16 @@ contract Lottery {
     function getBetInfo(uint256 index) public view returns (uint256 answerBlockNumber, address bettor, byte challenges) {
         BetInfo memory b = _bets[index];
         answerBlockNumber = b.answerBlockNumber;
-        bettor = b.better;
+        bettor = b.bettor;
         challenges = b.challenges;
     }
 
-    function pushBet(byte challenges) public return (bool) {
+    function pushBet(byte challenges) internal returns (bool) {
         BetInfo memory b;
-        b.bettor = msg.sender;
-        b.answerBlockNumber = block.number + BET_BLOCK_INTERVAL;
+        b.bettor = msg.sender; // msg.sender 나 block.number // solidity readdoc 에 가면 확인할 수 있음
+        // msg.sender (address): 메세지 발신자 (현재 호출)
+        b.answerBlockNumber = block.number + BET_BLOCK_INTERVAL; // https://solidity-kr.readthedocs.io/ko/latest/units-and-global-variables.html
+        // block.number (uint): 현재 블록 번호
         b.challenges = challenges;
 
         _bets[_tail] = b;
@@ -62,7 +80,7 @@ contract Lottery {
         return true;
     }
 
-    function popBet(uint256 index) public returns (bool) {
+    function popBet(uint256 index) internal returns (bool) {
         // pop을 할 때 매핑이기 때문에 list에서 삭제하기 보다는
         // 단순하게 값을 초기화 하는 방식으로 진행
         // 맵에 있는 값을 delete 하게 되면 가스를 돌려받게 됨
