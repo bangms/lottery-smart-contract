@@ -33,4 +33,10 @@ contract('Lottery', function([deployer, user1, user2]){ // 순서대로 account 
         // deploy에 있는 스크립트를 연계할 수도 있지만 ~~~ 
 
     })
+
+    // 특정 케이스만 테스트 하고 싶을 경우 only 사용
+    it.only('getPot should return current pot', async () => {
+        let pot = await lottery.getPot();
+        assert.equal(pot, 0);
+    })
 });
