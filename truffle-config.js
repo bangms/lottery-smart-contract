@@ -18,10 +18,15 @@
  *
  */
 
+// 트러플 환경에서 어떤 세팅을 사용할 건지 세팅을 할 수 있음 
+// 어떤 월렛을 사용할 건지, infuraKey도 설정할 수 있고
 // const HDWalletProvider = require('@truffle/hdwallet-provider');
+// -- infuraKey 는 블록체인을 사용할 때 외부에서 편하게 사용할 수 있는 클라우드 같은 시스템을 말함
 // const infuraKey = "fj4jll3k.....";
-//
+
+// 파일시스템
 // const fs = require('fs');
+// mnemonic 니모닉도 설정 가능
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
 
 module.exports = {
@@ -42,6 +47,7 @@ module.exports = {
     // tab if you use this network and you must also set the `host`, `port` and `network_id`
     // options below to some value.
     //
+    // 여기서는 블록체인 네트워크를 로컬에서 사용하려고 하는 것이기 때문에 development를 사용
     development: {
      host: "127.0.0.1",     // Localhost (default: none)
      port: 8545,            // Standard Ethereum port (default: none)
