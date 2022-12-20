@@ -1,10 +1,10 @@
-pragma solidity >=0.4.22 <0.9.0;
+pragma solidity >=0.5.0 <0.9.0;
 
 contract Lottery {
     struct BetInfo {
         uint256 answerBlockNumber; // 맞추려고 하는 정답 block
         address payable bettor; // 0.4.24? 이후 부터는 특정 주소에 돈을 보내려면 payable이라는 수식어를 붙여줘야 함 아니면 transfer 불가능
-        byte challenges;
+        bytes1 challenges; // byte 사라짐  => bytes1 https://docs.soliditylang.org/en/v0.8.3/080-breaking-changes.html#silent-changes-of-the-semantics
 
     }
 
@@ -24,7 +24,7 @@ contract Lottery {
     // 18승 = 1이더 / 17 = 0.1 / 16 = 0.01 / 15 = 0.001
     uint256 private _pot;
 
-    event BET(uint256 index, address bettor, uint256 amount, byte challenges, uint256 answerBlockNumber);
+    event BET(uint256 index, address bettor, uint256 amount, bytes1 challenges, uint256 answerBlockNumber);
     
     constructor() public {
         owner = msg.sender;
@@ -35,13 +35,13 @@ contract Lottery {
     }
 
     // Bet (베팅)
-    /**
+    /*
      * @dev 베팅을 한다. 유저는 0.005 ETH를 보내야 하고, 베팅용 1 byte 글자를 보낸다.
      * 큐에 저장된 베팅 정보는 이후 distribute 함수에서 해결된다.
      * @param challenges 유저가 베팅하는 글자
      * @return 함수가 잘 수행되었는지 확인하는 bool 값
      */
-    function bet(byte challenges) public payable returns (bool result) {
+    function bet(bytes1 challenges) public payable returns (bool result) {
         // check the proper ether is sent
         require(msg.value == BET_AMOUNT, "Not enough ETH!");
 
@@ -59,14 +59,14 @@ contract Lottery {
         // check the answer (결과값을 검증)
         // 틀리면 pot 머니에 넣고 맞으면 돌려주는 연산
 
-    function getBetInfo(uint256 index) public view returns (uint256 answerBlockNumber, address bettor, byte challenges) {
+    function getBetInfo(uint256 index) public view returns (uint256 answerBlockNumber, address bettor, bytes1 challenges) {
         BetInfo memory b = _bets[index];
         answerBlockNumber = b.answerBlockNumber;
         bettor = b.bettor;
         challenges = b.challenges;
     }
 
-    function pushBet(byte challenges) internal returns (bool) {
+    function pushBet(bytes1 challenges) internal returns (bool) {
         BetInfo memory b;
         b.bettor = msg.sender; // msg.sender 나 block.number // solidity readdoc 에 가면 확인할 수 있음
         // msg.sender (address): 메세지 발신자 (현재 호출)
